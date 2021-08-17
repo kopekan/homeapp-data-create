@@ -1,21 +1,14 @@
 # homeapp-data-create
 
-DS4NER: 我們實驗室學長開發的NER相關程式，基本上在這裡用不到。 
 
-Old: 舊程式碼，用不到也就不整理了。 
-
-Seed: 在論文的準備資料中提到從經濟部網站爬下來的產品名稱、廠牌的種子 
-
-爬蟲: 爬經濟部網站寫的爬蟲程式 
-
-Read_data.ipynb: 
+* **Read_data.ipynb**
 
 讀取mobile01的文章，並擷取出現產品、廠牌的段落。裡面有滿多統計，所以程式碼很多。但如果老師沒有要你修改原始資料，這邊就不用看。 
 
-Mobile01.json: mobile01家電討論原始資料 
+* **Mobile01.json**
 
-LabelAPP: 處理標記完成後資料，裡面有三份資料之前就說過了。 
+mobile01家電討論原始資料 
 
-Labelapp.ipynb: 計算兩組標記人員的kappa、統計、依照不同任務產生不同形式的資料。總之程式碼超級長。 
+* **Labelapp.ipynb**
 
-crf.py: 用docker安裝的tf2環境在crf的檔案中會有問題，因此重新安裝完tf2的image後要再用這個crf.py的檔案取代原本的，後面會提到。 
+計算兩組標記人員的kappa、統計、依照不同任務產生不同形式的資料。總之程式碼超級長。 
