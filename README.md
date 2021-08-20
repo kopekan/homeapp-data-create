@@ -1,4 +1,4 @@
-# homeapp-data-create
+# homeapp data create
 
 
 * **Read_data.ipynb**
@@ -15,4 +15,9 @@
   **label1.json** : 標記人員1的標記結果
   
   **label2.json** : 標記人員2的標記結果
+  
+* **labeled_data_origin**
+
+  資料標記程式(網頁)
+  
   
