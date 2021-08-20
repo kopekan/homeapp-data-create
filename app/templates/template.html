@@ -1,0 +1,458 @@
+<html>
+<head>
+    <title>Paragraph Details</title>
+	<script type="text/javascript">
+		var origin_data;
+		var time;
+		var clicked = -1;
+		var aspect_key = ["product_name", "product_name_start","product_brand","product_brand_start","aspect_category"
+						,"aspect_term","aspect_term_start","opinion_word","opinion_word_start", "sentiment"];
+		function formSubmit(){
+			let product_name = document.getElementById("product_name").value;
+			let product_brand = document.getElementById("product_brand").value;
+			let aspect_category = document.getElementById("aspect_category").value;
+			let aspect_term = document.getElementById("aspect_term").value;
+			let opinion_word = document.getElementById("opinion_word").value;
+			let sentiment = document.getElementById("sentiment").value;
+			let product_name_start = parseInt(document.getElementById("repeat_product_name").value, 10);
+			let product_brand_start = parseInt(document.getElementById("repeat_product_brand").value, 10);
+			let aspect_term_start = parseInt(document.getElementById("repeat_aspect_term").value, 10);
+			let opinion_word_start = parseInt(document.getElementById("repeat_opinion_word").value, 10);
+			if(String(product_name_start)=="" | String(product_name_start)=="NaN")
+				product_name_start=-1;
+			if(String(product_brand_start)=="" | String(product_brand_start)=="NaN")
+				product_brand_start=-1;
+			if(String(aspect_term_start)=="" | String(aspect_term_start)=="NaN")
+				aspect_term_start=-1;
+			if(String(opinion_word_start)=="" | String(opinion_word_start)=="NaN")
+				opinion_word_start=-1;
+			
+			var sentence_id = document.getElementById('sentence_id').textContent;
+			var xhr = new XMLHttpRequest(); 			
+			xhr.open('PUT', `/data/${sentence_id}`);
+			xhr.setRequestHeader('Content-Type',  'application/json');
+			var data = {
+				'product_name':product_name,
+				'product_name_start':product_name_start,
+				'product_brand':product_brand,
+				'product_brand_start':product_brand_start,
+				'aspect_category':aspect_category,
+				'aspect_term':aspect_term,
+				'aspect_term_start':aspect_term_start,
+				'opinion_word':opinion_word,
+				'opinion_word_start':opinion_word_start,
+				'sentiment':sentiment
+			}
+			check_result = check_data(data);
+			if(check_result[0]){
+				//看有沒有重複資料
+				origin_data.aspect = check_repeat(data);
+				var json = JSON.stringify(origin_data);
+				
+				xhr.send(json);
+				xhr.addEventListener('load',()=>{location.reload();});				
+			}
+			else{
+				alert(check_result[1]);				
+			}
+		}
+		function show_word(id){
+		//	console.log(origin_data['aspect'][id]);
+			if(id==-1){
+				show_table(origin_data, -1);
+				document.getElementById("sentence").innerHTML = origin_data.sentence;
+			}
+			else if(clicked==id){
+				show_table(origin_data, -1);
+				document.getElementById("sentence").innerHTML = origin_data.sentence;
+				clicked = -1;
+			}
+			else {
+				show_table(origin_data, id);
+				clicked = id;
+				var temp_sentence = '';
+				var xhr = new XMLHttpRequest(); 			
+				for(var i = 0;i<origin_data.sentence.length;i++){
+					if(i==origin_data.aspect[id]['product_name_start'] | i==origin_data.aspect[id]['product_brand_start'] |
+					   i==origin_data.aspect[id]['aspect_term_start'] | i==origin_data.aspect[id]['opinion_word_start'])
+						temp_sentence+="<font color='red'>";					
+					if(i==origin_data.aspect[id]['product_name_start']+origin_data.aspect[id]['product_name'].length | 
+					   i==origin_data.aspect[id]['product_brand_start']+origin_data.aspect[id]['product_brand'].length |
+					   i==origin_data.aspect[id]['aspect_term_start']+origin_data.aspect[id]['aspect_term'].length | 
+					   i==origin_data.aspect[id]['opinion_word_start']+origin_data.aspect[id]['opinion_word'].length){
+						temp_sentence+="</font>";																   
+					   }
+					
+					temp_sentence+=	origin_data.sentence[i];				
+				}
+				document.getElementById("sentence").innerHTML = temp_sentence;
+			}
+
+		}
+		function show_modify(id){
+			if(id==-1){
+				show_table(origin_data, -1);
+				;
+			}
+			else {
+				document.getElementById("product_name").value = origin_data.aspect[id]["product_name"];
+			//	document.getElementById("repeat_product_name").innerHTML = `<option value = ${origin_data.aspect[id]["product_name_start"]}>-</otion>`;
+				document.getElementById("product_brand").value = origin_data.aspect[id]["product_brand"];
+			//	document.getElementById("repeat_product_brand").innerHTML = `<option value = ${origin_data.aspect[id]["product_brand_start"]}>-</otion>`;
+				document.getElementById("aspect_category").value = origin_data.aspect[id]["aspect_category"];
+				document.getElementById("aspect_term").value = origin_data.aspect[id]["aspect_term"];
+			//	document.getElementById("repeat_aspect_term").innerHTML = `<option value = ${origin_data.aspect[id]["aspect_term_start"]}>-</otion>`;
+				document.getElementById("opinion_word").value = origin_data.aspect[id]["opinion_word"];
+			//	document.getElementById("repeat_opinion_word").innerHTML = `<option value = ${origin_data.aspect[id]["opinion_word_start"]}>-</otion>`;
+				document.getElementById("sentiment").value = origin_data.aspect[id]["sentiment"];
+				repeat_word('product_name', origin_data.aspect[id]["product_name_start"]);
+				repeat_word('product_brand', origin_data.aspect[id]["product_brand_start"]);
+				repeat_word('aspect_term', origin_data.aspect[id]["aspect_term_start"]);
+				repeat_word('opinion_word', origin_data.aspect[id]["opinion_word_start"]);
+				show_table(origin_data, id);
+			}
+			document.getElementById("buttons").innerHTML = `<input type="button" value="Submit" onclick="formSubmit()"> <input type="button" value="Modify" onclick = modify(${id})>`;							
+
+		}
+		function modify(id){
+			if(id==-1){
+				return ;
+			}
+			else {
+				var new_aspect = origin_data.aspect[id];
+				new_aspect["product_name"] = document.getElementById("product_name").value;
+				new_aspect["product_name_start"] = parseInt(document.getElementById("repeat_product_name").value, 10);
+				new_aspect["product_brand"] = document.getElementById("product_brand").value;
+				new_aspect["product_brand_start"] = parseInt(document.getElementById("repeat_product_brand").value, 10);
+				new_aspect["aspect_category"] = document.getElementById("aspect_category").value;
+				new_aspect["aspect_term"] = document.getElementById("aspect_term").value;
+				new_aspect["aspect_term_start"] = parseInt(document.getElementById("repeat_aspect_term").value, 10);
+				new_aspect["opinion_word"] = document.getElementById("opinion_word").value;
+				new_aspect["opinion_word_start"] = parseInt(document.getElementById("repeat_opinion_word").value, 10);
+				new_aspect["sentiment"] = document.getElementById("sentiment").value;
+				check_result = check_data(new_aspect);
+				if(check_result[0]){
+					origin_data.aspect[id] = new_aspect;
+					var sentence_id = document.getElementById('sentence_id').textContent;
+					var json = JSON.stringify(origin_data)
+					var xhr = new XMLHttpRequest();
+					xhr.open('PUT', `/data/${sentence_id}`);
+					xhr.setRequestHeader('Content-Type',  'application/json');
+					xhr.send(json);
+					xhr.addEventListener('load',()=>{location.reload();});								
+				}
+				else{
+					alert(check_result[1]);
+				}
+			}			
+
+		}
+		function repeat_word(id, sel){
+			let word = document.getElementById(id).value
+			let split_length = origin_data.sentence.split(word).length;
+			if(split_length>2 & word!=""){
+				let count = 0;
+				let threshold = 5;
+				let sentence = origin_data.sentence;
+				let select_html = "<option value = -1>有重複字 請選擇</otion>";
+				var xhr = new XMLHttpRequest(); 			
+				for(var i=0;i<split_length-1;i++){
+					let sub_sentence="「"+word+"」";
+					let low = sentence.indexOf(word)-threshold;					
+					if(low<0)
+						low=0;
+					for(var j=sentence.indexOf(word)-1;j>=low;j--)
+						sub_sentence=sentence[j]+sub_sentence;
+					let high = word.length+sentence.indexOf(word)+threshold;
+					if(high>=sentence.length)
+						high = sentence.length-1;
+					for(var j=sentence.indexOf(word)+word.length;j<=high;j++)
+						sub_sentence+=sentence[j];
+				//	let sub_sentence = sentence.substr(low, high);
+					if(sentence.indexOf(word)+count==sel)
+						select_html+=`<option value = ${sentence.indexOf(word)+count} selected>${sub_sentence}</otion>`;
+					else
+						select_html+=`<option value = ${sentence.indexOf(word)+count}>${sub_sentence}</otion>`;
+					count+=sentence.indexOf(word)+word.length;
+					sentence = sentence.substr(sentence.indexOf(word)+word.length);
+				}
+				document.getElementById("repeat_"+id).innerHTML = select_html;
+			}
+			else if(split_length==2){
+				document.getElementById("repeat_"+id).innerHTML = `<option value = ${origin_data.sentence.indexOf(word)}>-</otion>`;				
+			}
+			else if(word==""|String(word)==""){
+				document.getElementById("repeat_"+id).innerHTML = '<option value = -1>-</otion>';				
+			}
+			else{ //輸入的文字有沒有在文句之中
+				document.getElementById("repeat_"+id).innerHTML = '<option value = -1>-</otion>';				
+//				alert("輸入的文字沒有在文句之中");
+			}
+				
+		}
+		function delete_aspect(i){
+			origin_data.aspect.splice(i, 1);
+			var sentence_id = document.getElementById('sentence_id').textContent;
+			var xhr = new XMLHttpRequest(); 			
+			xhr.open('PUT', `/data/${sentence_id}`);
+			xhr.setRequestHeader('Content-Type',  'application/json');
+			var json = JSON.stringify(origin_data);
+			xhr.send(json);
+			xhr.addEventListener('load',()=>{location.reload();});
+		}
+		function show_table(data, sel){
+			/*		
+//			let printdata = '<tr><th>Product Name</th><th>Product Brand</th><th>Aspect Category</th><th>Aspect Term</th><th>Opinion Word</th><th>Sentiment</th><th>show</th><th>mod</th><th>del</th></tr>';
+			let printdata = '<tr><th>PN</th><th>PB</th><th>AC</th><th>AT</th><th>OW</th><th>Sent</th><th>show</th><th>mod</th><th>del</th></tr>';
+			for(var i=0;i<takedata.aspect.length;i++){
+				printdata+='<tr>';
+				printdata+=	'<td>'+String(takedata.aspect[i].product_name)+'</td>';
+				printdata+=	'<td>'+String(takedata.aspect[i].product_brand)+'</td>';
+				printdata+=	'<td>'+String(takedata.aspect[i].aspect_category)+'</td>';
+				printdata+=	'<td>'+String(takedata.aspect[i].aspect_term)+'</td>';
+				printdata+=	'<td>'+String(takedata.aspect[i].opinion_word)+'</td>';
+				printdata+=	'<td>'+String(takedata.aspect[i].sentiment)+'</td>';
+				printdata+= `<td><button id=${i} type='button' onClick="show_word(${i})">show</button></td>`;
+				printdata+= `<td><button id=${i} type='button' onClick="show_modify(${i})">modify</button></td>`;
+				printdata+= `<td><button id=${i} type='button' onClick="delete_aspect(${i})">delete</button></td>`;
+				printdata+='</tr>';
+			}		
+			*/
+			var takedata = JSON.parse(JSON.stringify(data));
+			if(sel!=-1){
+				takedata.aspect[sel].product_name = '<font color=red>'+String(takedata.aspect[sel].product_name)+'</font>';
+				takedata.aspect[sel].product_brand = '<font color=red>'+String(takedata.aspect[sel].product_brand)+'</font>';
+				takedata.aspect[sel].aspect_category = '<font color=red>'+String(takedata.aspect[sel].aspect_category)+'</font>';
+				takedata.aspect[sel].aspect_term = '<font color=red>'+String(takedata.aspect[sel].aspect_term)+'</font>';
+				takedata.aspect[sel].opinion_word = '<font color=red>'+String(takedata.aspect[sel].opinion_word)+'</font>';
+				takedata.aspect[sel].sentiment = '<font color=red>'+String(takedata.aspect[sel].sentiment)+'</font>';
+			}
+			let printdata='';
+			printdata+='<tr><th>PN</th>';
+			for(var i=0;i<takedata.aspect.length;i++)
+				printdata+='<td>'+String(takedata.aspect[i].product_name)+'</td>';
+			printdata+='</tr><tr><th>PB</th>';
+			for(var i=0;i<takedata.aspect.length;i++)
+				printdata+='<td>'+String(takedata.aspect[i].product_brand)+'</td>';
+			printdata+='</tr><tr><th>AC</th>';
+			for(var i=0;i<takedata.aspect.length;i++)
+				printdata+='<td>'+String(takedata.aspect[i].aspect_category)+'</td>';
+			printdata+='</tr><tr><th>AT</th>';
+			for(var i=0;i<takedata.aspect.length;i++)
+				printdata+='<td>'+String(takedata.aspect[i].aspect_term)+'</td>';
+			printdata+='</tr><tr><th>OW</th>';
+			for(var i=0;i<takedata.aspect.length;i++)
+				printdata+='<td>'+String(takedata.aspect[i].opinion_word)+'</td>';
+			printdata+='</tr><tr><th>Sent</th>';
+			for(var i=0;i<takedata.aspect.length;i++)
+				printdata+='<td>'+String(takedata.aspect[i].sentiment)+'</td>';
+			printdata+='</tr><tr><th>show</th>';
+			for(var i=0;i<takedata.aspect.length;i++)
+				printdata+=`<td><button id=${i} type='button' onClick="show_word(${i})">show</button></td>`;
+			printdata+='</tr><tr><th>mod</th>';
+			for(var i=0;i<takedata.aspect.length;i++)
+				printdata+=`<td><button id=${i} type='button' onClick="show_modify(${i})">modify</button></td>`;
+			printdata+='</tr><tr><th>del</th>';
+			for(var i=0;i<takedata.aspect.length;i++)
+				printdata+=`<td><button id=${i} type='button' onClick="delete_aspect(${i})">delete</button></td>`;
+			printdata+='</tr>';
+			document.getElementById("target").innerHTML = printdata;
+		}
+		function replace_data(data){
+			time = new Date();
+			let takedata = JSON.parse(data.srcElement.response).data[0];
+			origin_data = takedata;
+			show_table(takedata, -1);
+			document.getElementById("buttons").innerHTML = '<input type="button" value="Submit" onclick="formSubmit()">';							
+			show_word(-1);
+			update_time();
+			console.log(origin_data);
+		}
+		function jumppage(relatepage){
+			let sentence_id = parseInt(document.getElementById('sentence_id').textContent, 10);
+			let total_sentence = parseInt(document.getElementById("total_sentence").textContent, 10)
+			if(relatepage+sentence_id>=0 & relatepage+sentence_id < total_sentence)
+				sentence_id += relatepage;
+			sentence_id = sentence_id.toString();			
+			sentence_id = "/"+sentence_id;	
+			window.location = sentence_id;			
+		}
+		function check_data(data){
+			//輸入的文字有沒有在文句之中
+			//console.log(data);
+			
+			if(origin_data.sentence.indexOf(data["product_name"])==-1)
+				return [false, "輸入的Product Name沒有在文句之中!"];
+			else if(origin_data.sentence.indexOf(data["product_brand"])==-1)
+				return [false, "輸入的Product Brand沒有在文句之中!"];	
+			else if(origin_data.sentence.indexOf(data["aspect_term"])==-1)
+				return [false, "輸入的Aspect Term沒有在文句之中!"];
+			else if(origin_data.sentence.indexOf(data["opinion_word"])==-1)
+				return [false, "輸入的Opinion Word沒有在文句之中!"];						
+			
+			//看位置紀錄有沒有錯
+			if(!isNaN(data["product_name_start"])|data["product_name_start"]!=-1){
+				if(origin_data.sentence[data["product_name_start"]]!=data["product_name"][0])
+					return [false, "輸入的Product Name位置紀錄有誤，請重新輸入!"];
+			}
+			if(!isNaN(data["product_brand_start"])|data["product_brand_start"]!=-1){
+				if(origin_data.sentence[data["product_brand_start"]]!=data["product_brand"][0])
+					return [false, "輸入的Product Brand位置紀錄有誤，請重新輸入!"];							
+			}
+			if(!isNaN(data["aspect_term_start"])|data["aspect_term_start"]!=-1){
+				if(origin_data.sentence[data["aspect_term_start"]]!=data["aspect_term"][0])
+					return [false, "輸入的Aspect Term位置紀錄有誤，請重新輸入!"];
+			}
+			if(!isNaN(data["opinion_word_start"])|data["opinion_word_start"]!=-1){
+				if(origin_data.sentence[data["opinion_word_start"]]!=data["opinion_word"][0])
+					return [false, "輸入的Opinion Word位置紀錄有誤，請重新輸入!"];
+			}
+			//空資料(產品名稱跟產品品牌為空->這兩個至少要有一個有值)
+			if(isNaN(data["product_name_start"]) & isNaN(data["product_brand_start"]) | 
+				data["product_name_start"]+data["product_brand_start"]==-2){
+				return [false, "產品名稱及產品品牌不可皆為空!"];
+			}
+			//正確資料
+			else{
+				return [true, "ok"];										
+			}
+		//		return [true, "ok"];													
+		}
+		function check_repeat(data){
+			var origin_data_str = [];
+			var new_data_str="";
+			for(var i=0;i<origin_data.aspect.length;i++){
+				var str = "";
+				for(var j = 0;j<aspect_key.length;j++)
+					str+=String(origin_data.aspect[i][aspect_key[j]]);
+				
+				origin_data_str = [...origin_data_str, str];
+			}
+			for(var i =0;i<aspect_key.length;i++){
+				if(String(data[aspect_key[i]])=="NaN"){
+					new_data_str+="null";
+				}
+				else
+					new_data_str+=String(data[aspect_key[i]]);
+			}
+			for(var i=0;i<origin_data.aspect.length;i++){
+				if(new_data_str==origin_data_str[i]){
+					new_data_str="";
+					return origin_data.aspect;					
+				}
+			}
+			if(new_data_str!="")
+				return [...origin_data.aspect,data];
+		}
+		function update_time(){
+			origin_data['time']+=1; 
+		//	console.log(origin_data.time);
+			setTimeout('update_time()', 1000);
+		}
+		window.onload = function (){
+			var xhr = new XMLHttpRequest(); 
+			var sentence_id = document.getElementById('sentence_id').textContent;
+			xhr.open('GET', `/data/${sentence_id}`);
+			xhr.send();	
+			xhr.addEventListener('load', (data)=>{
+				return replace_data(data);
+			});	
+		}		
+		window.onbeforeunload = function(){
+			var sentence_id = document.getElementById('sentence_id').textContent;
+			var json = JSON.stringify(origin_data);
+			var xhr = new XMLHttpRequest();
+			xhr.open('PUT', `/data/${sentence_id}`);
+			xhr.setRequestHeader('Content-Type',  'application/json');
+			xhr.send(json);
+		}
+	</script>
+	<style  type="text/css" >
+	div{
+		width: 600px;border: 5px solid gray;
+	}
+	table{
+		text-align:center;
+		vertical-align: middle;
+		width: 500px;
+		position:absolute; 
+		border-collapse: collapse;
+		border:8px solid white;
+		top:0px;
+		left:620px;
+		display: block; 
+	}
+	tr { 
+//		display: block; 
+		text-align:center;
+//		float: left;
+	}
+	th, td { 
+		text-align:center;
+//		display: block; 
+		border:1px solid gray;
+		height: 50px;
+		width: 70px;
+	}
+	td{
+		width: 70px;
+	}
+	h2, h3, form{
+		text-align:center;
+	}
+/*	input{
+		position:fixed; 
+	}*/
+	</style>
+</head>
+<body>
+	<div id='content'>
+    <h3>	
+	<button type='button' onClick=jumppage(-1)> < </button>
+	Paragraph ID
+	<button type='button' onClick=jumppage(1)> > </button>	
+	</h3>
+	<h2 id='sentence_id'>{{sentence_id}}</h2>
+	<p id="total_sentence" hidden="hidden">{{total_sentence}}</p>
+	<h3>Paragraph Content </h3>
+	<p id = 'sentence'></p>			
+
+	<!-- Modify button -->
+	
+	<h3>Add New Aspect</h3>
+	<form>
+	<label for="product_name">Product Name: </label><br>
+	<input type="text" id="product_name" name="product_name" onchange="repeat_word('product_name', -1)" value="">
+	<select id = "repeat_product_name" name="repeat_product_name" value=-1></select><br>
+	<label for="product_brand">Product Brand: </label><br>
+	<input type="text" id="product_brand" name="product_brand" onchange="repeat_word('product_brand', -1)" value="">
+	<select id = "repeat_product_brand" name="repeat_product_brand" value=-1></select><br>
+	<label for="aspect_category">Aspect Category: </label><br>
+	<select id = "aspect_category" name = "aspect_category">
+		<option value = "無">無</option>
+		<option value = "價位">價位</option>
+		<option value = "功能">功能</option>
+		<option value = "售後">售後</option>
+		<option value = "外觀">外觀</option>
+		<option value = "品質">品質</option>
+		<option value = "音量">音量</option>
+		<option value = "配件">配件</option>
+	</select><br>
+	<label for="aspect_term">Aspect Term: </label><br>
+	<input type="text" id="aspect_term" name="aspect_term" onchange="repeat_word('aspect_term', -1)" value="">
+	<select id = "repeat_aspect_term" name="repeat_aspect_term" value=-1></select><br>
+	<label for="opinion_word">Opinion Word: </label><br>
+	<input type="text" id="opinion_word" name="opinion_word" onchange="repeat_word('opinion_word', -1)" value="">
+	<select id = "repeat_opinion_word" name="repeat_opinion_word" value=-1></select><br>
+	<label for="sentiment">Sentiment: </label><br>
+	<select id = "sentiment" name = "sentiment">
+		<option value = "中立">中立</option>
+		<option value = "正向">正向</option>
+		<option value = "負向">負向</option>
+	</select>	
+	<p id ="buttons"></p>
+	</form> 
+	</div>
+	<table id = 'target'></table>
+</body>
+</html>
